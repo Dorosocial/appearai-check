@@ -247,8 +247,8 @@ const defs=[
 
 const msgs={
   https:  {pass:'Secure — AI crawlers fully trust your site.',fail:'Not HTTPS — AI crawlers flag this site as untrustworthy.',warn:'HTTPS unclear.'},
-  speed:  {pass:'Fast — AI bots can read your full content.',fail:'Too slow — AI crawlers may time out and skip your site.',warn:'Moderate speed — there is room to improve.'},
-  mobile: {pass:'Mobile friendly — AI indexes your full content.',fail:'Not mobile friendly — AI sees a degraded version of your site.',warn:'Mobile experience needs improvement.'},
+  speed:  {pass:'Fast — AI bots can read your full content.',fail:'Too slow — AI crawlers may time out and skip your site.',warn:'Analysing speed in background...'},
+  mobile: {pass:'Mobile friendly — AI indexes your full content.',fail:'Not mobile friendly — AI sees a degraded version of your site.',warn:'Analysing mobile in background...'},
   schema: {pass:'Schema found — AI knows exactly who you are.',fail:'No schema — AI cannot reliably identify your business.',warn:'Limited schema — AI is guessing about your business.'},
   robots: {pass:'All AI crawlers allowed — they can read your site.',fail:'AI crawlers blocked — ChatGPT or Claude cannot read you.',warn:'Crawler access unclear — needs investigation.'},
   llms:   {pass:'llms.txt found — AI has a guide to your content.',fail:'No llms.txt — AI has no guide to understand your site.',warn:'llms.txt unclear.'},
@@ -380,7 +380,7 @@ async function runCheck(){
 
   const base=parsed.origin;
 
-  // Worker and PSI run independently so neither blocks the other
+  // Worker runs first — fast results in 2-3 seconds
   try {
     const wResp=await fetch(`${WORKER}?url=${encodeURIComponent(base)}`);
     const wData=await wResp.json();
@@ -396,25 +396,27 @@ async function runCheck(){
     ['schema','robots','llms','content'].forEach(id=>setCheck(id,'warn',0));
   }
 
-  // PSI runs independently — speed and mobile load after worker results
-  try {
-    const pResp=await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(base)}&strategy=mobile&key=${PSI}&category=performance&category=seo&category=best-practices`);
-    const pData=await pResp.json();
-    const lhr=pData?.lighthouseResult;
-    const audits=lhr?.audits||{};
-    const cats=lhr?.categories||{};
-    const perf=cats.performance?Math.round(cats.performance.score*100):null;
-    setCheck('speed',perf===null?'warn':perf>=70?'pass':perf>=40?'warn':'fail',perf===null?7:perf>=70?15:perf>=40?8:2);
-    const vp=audits['viewport'];
-    setCheck('mobile',vp?.score===1?'pass':vp?.score===0?'fail':'warn',vp?.score===1?10:vp?.score===0?0:5);
-  } catch(e){
-    setCheck('speed','warn',7);
-    setCheck('mobile','warn',5);
-  }
-
+  // Re-enable button immediately after Worker results
   btn.disabled=false;btn.textContent='Check again →';
-  const final=tally();
-  if(final<80)cta.style.display='block';
+  if(tally()<80)cta.style.display='block';
+
+  // PSI runs in background — speed and mobile update quietly
+  fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(base)}&strategy=mobile&key=${PSI}&category=performance&category=seo&category=best-practices`)
+    .then(r=>r.json())
+    .then(pData=>{
+      const lhr=pData?.lighthouseResult;
+      const audits=lhr?.audits||{};
+      const cats=lhr?.categories||{};
+      const perf=cats.performance?Math.round(cats.performance.score*100):null;
+      setCheck('speed',perf===null?'warn':perf>=70?'pass':perf>=40?'warn':'fail',perf===null?7:perf>=70?15:perf>=40?8:2);
+      const vp=audits['viewport'];
+      setCheck('mobile',vp?.score===1?'pass':vp?.score===0?'fail':'warn',vp?.score===1?10:vp?.score===0?0:5);
+      if(tally()<80)cta.style.display='block';
+    })
+    .catch(()=>{
+      setCheck('speed','warn',7);
+      setCheck('mobile','warn',5);
+    });
 }
 
 document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')runCheck()});
