@@ -216,13 +216,13 @@ const defs=[
    tag:'What is structured data?',
    edu:'Schema markup is hidden code that tells AI exactly what your business is — your name, address, phone, services, hours, and reviews. Think of it as a business card written in a language AI reads perfectly.',
    impactFail:'Without schema, AI guesses what your business does and often gets it wrong — or skips you entirely when recommending local businesses to potential customers.',
-   impactPass:'Excellent. Your schema markup means AI can read your business details accurately and confidently cite you when someone searches for your services.'},
+   impactPass:'Excellent. Your schema markup means AI can read your business details accurately and confidently recommend you when someone searches for your services.'},
   {id:'robots',title:'AI Crawler Access',weight:15,
    tag:'What is robots.txt?',
    edu:'robots.txt is a file on your website that tells bots what they can and cannot read. Many websites accidentally block AI crawlers like GPTBot (ChatGPT), ClaudeBot, and PerplexityBot.',
    impactFail:'An AI crawler is being blocked. This means ChatGPT, Claude, or Perplexity literally cannot read your website — making it impossible for them to recommend you.',
    impactPass:'All major AI crawlers are allowed. GPTBot, ClaudeBot, and PerplexityBot can fully access and read your website content.'},
-  {id:'llms',title:'llms.txt File',weight:15,
+  {id:'llms',title:'llms.txt File',weight:20,
    tag:'What is llms.txt?',
    edu:'llms.txt is a new standard file (like robots.txt but for AI) that guides AI language models on how to understand your website — what your business does, your key pages, and how to reference you. Very few local businesses have this set up correctly.',
    impactFail:'No llms.txt means AI has no guide for understanding your site. This is one of the most impactful fixes for AI visibility and requires specialist setup.',
@@ -232,7 +232,7 @@ const defs=[
    edu:'A meta description is a short summary of your page that appears in search results and is read by AI crawlers. It tells AI exactly what your business does in plain language.',
    impactFail:'No meta description means AI has to guess what your business does from your page content alone — leading to inaccurate or missing recommendations.',
    impactPass:'Your meta description gives AI a clear, concise summary of your business — improving how accurately it describes and recommends you.'},
-  {id:'title',title:'Business Name & Page Title',weight:15,
+  {id:'title',title:'Business Name & Page Title',weight:10,
    tag:'Why does your page title matter?',
    edu:'Your page title is the first thing AI reads when visiting your site. It should clearly state your business name and what you do. Generic titles like "Home" or "Welcome" confuse AI crawlers.',
    impactFail:'Your page title is weak or generic. AI cannot confidently identify your business name or what you do — making it hard to recommend you accurately.',
@@ -246,7 +246,7 @@ const defs=[
 
 const msgs={
   https:    {pass:'Secure — AI crawlers fully trust your site.',fail:'Not HTTPS — AI crawlers flag this site as untrustworthy.',warn:'HTTPS unclear.'},
-  schema:   {pass:'Schema found — AI knows exactly who you are.',fail:'No schema — AI cannot reliably identify your business.',warn:'Limited schema — AI is guessing about your business.'},
+  schema:   {pass:'Schema found — AI knows exactly who you are.',fail:'No schema found — AI builds an incomplete picture of your business.',warn:'Limited schema — AI is building an incomplete picture of your business.'},
   robots:   {pass:'All AI crawlers allowed — they can read your site.',fail:'AI crawlers blocked — ChatGPT or Claude cannot read you.',warn:'Crawler access unclear — needs investigation.'},
   llms:     {pass:'llms.txt found — AI has a guide to your content.',fail:'No llms.txt — AI has no guide to understand your site.',warn:'llms.txt unclear.'},
   metadesc: {pass:'Meta description found — AI has a clear summary of your business.',fail:'No meta description — AI has to guess what your business does.',warn:'Meta description too short or missing.'},
@@ -267,7 +267,11 @@ function tally(){
   const col={good:'#00e676',warn:'#ffb300',bad:'#ff4444'};
   const barBg={good:'linear-gradient(90deg,#00e676,#00c853)',warn:'linear-gradient(90deg,#ffb300,#ff6d00)',bad:'linear-gradient(90deg,#ff4444,#d50000)'};
   const glows={good:'radial-gradient(ellipse,rgba(0,230,118,1) 0%,transparent 70%)',warn:'radial-gradient(ellipse,rgba(255,179,0,1) 0%,transparent 70%)',bad:'radial-gradient(ellipse,rgba(255,68,68,1) 0%,transparent 70%)'};
-  const vt={good:'Your site is reasonably visible to AI.',warn:'AI is missing key information about your business.',bad:'Your business is largely invisible to AI engines.'};
+  const vt={
+    good:'Your site gives AI a good chance of recommending you.',
+    warn:'AI tools may know you exist — but aren\'t recommending you consistently to the customers who need you.',
+    bad:'Your site doesn\'t give AI what it needs to recommend your business to customers.'
+  };
   const circ=219.9;
   document.getElementById('scoreNum').textContent=p;
   document.getElementById('scoreNum').style.color=col[tier];
