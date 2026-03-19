@@ -235,8 +235,8 @@ const defs=[
    impactPass:'All major AI crawlers are allowed. GPTBot, ClaudeBot, and PerplexityBot can fully access and read your website content.'},
   {id:'llms',title:'llms.txt File',weight:15,
    tag:'What is llms.txt?',
-   edu:'llms.txt is a new standard file (like robots.txt but for AI) that guides AI language models on how to understand your website — what your business does, your key pages, and how to reference you.',
-   impactFail:'No llms.txt means AI has no guide for understanding your site. Adding one takes minutes and is one of the fastest AI visibility wins available right now.',
+   edu:'llms.txt is a new standard file (like robots.txt but for AI) that guides AI language models on how to understand your website — what your business does, your key pages, and how to reference you. Very few local businesses have this set up correctly.',
+   impactFail:'No llms.txt means AI has no guide for understanding your site. This is one of the most impactful fixes for AI visibility and requires specialist setup.',
    impactPass:'You have an llms.txt file. This gives AI models a direct guide to your business, improving how accurately they describe and recommend you.'},
   {id:'content',title:'Content Structure',weight:15,
    tag:'Why does content structure matter?',
@@ -380,31 +380,31 @@ async function runCheck(){
 
   const base=parsed.origin;
 
+  // Worker and PSI run independently so neither blocks the other
   try {
-    const wResp = await fetch(`${WORKER}?url=${encodeURIComponent(base)}`);
-    const wData = await wResp.json();
+    const wResp=await fetch(`${WORKER}?url=${encodeURIComponent(base)}`);
+    const wData=await wResp.json();
     if(wData&&wData.results){
       const r=wData.results;
       for(const[i,id] of ['https','schema','robots','llms','content'].entries()){
         await sleep(i*100);
-        setCheck(id,r[id]?.status||'warn',r[id]?.score??5);
+        setCheck(id,r[id]?.status||'warn',r[id]?.score??0);
       }
     }
   } catch(e){
     setCheck('https',parsed.protocol==='https:'?'pass':'fail',parsed.protocol==='https:'?10:0);
-    ['schema','robots','llms','content'].forEach(id=>setCheck(id,'warn',5));
+    ['schema','robots','llms','content'].forEach(id=>setCheck(id,'warn',0));
   }
 
+  // PSI runs independently — speed and mobile load after worker results
   try {
-    const pResp = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(base)}&strategy=mobile&key=${PSI}&category=performance&category=seo&category=best-practices`);
-    const pData = await pResp.json();
+    const pResp=await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(base)}&strategy=mobile&key=${PSI}&category=performance&category=seo&category=best-practices`);
+    const pData=await pResp.json();
     const lhr=pData?.lighthouseResult;
     const audits=lhr?.audits||{};
     const cats=lhr?.categories||{};
     const perf=cats.performance?Math.round(cats.performance.score*100):null;
-    await sleep(150);
     setCheck('speed',perf===null?'warn':perf>=70?'pass':perf>=40?'warn':'fail',perf===null?7:perf>=70?15:perf>=40?8:2);
-    await sleep(100);
     const vp=audits['viewport'];
     setCheck('mobile',vp?.score===1?'pass':vp?.score===0?'fail':'warn',vp?.score===1?10:vp?.score===0?0:5);
   } catch(e){
