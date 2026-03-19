@@ -205,7 +205,6 @@ input[type=text]::placeholder{color:var(--muted2)}
 </div>
 <script>
 const WORKER='https://appearai-checker.socialmoa95.workers.dev';
-const PSI='AIzaSyChmZKl0DMxp8t8mS2ZmQj3yfOSaqGxIhI';
 
 const defs=[
   {id:'https',title:'HTTPS & Security',weight:10,
@@ -213,16 +212,6 @@ const defs=[
    edu:'HTTPS encrypts the connection between a visitor and your website. It shows as the padlock icon in browsers. Without it, your site is flagged as "Not Secure" by every major browser.',
    impactFail:'AI crawlers like GPTBot and ClaudeBot deprioritise non-HTTPS sites. No HTTPS means a lower chance of being recommended by ChatGPT or Claude.',
    impactPass:'Your site is secure. AI crawlers fully trust HTTPS sites and are more likely to index and cite them in answers.'},
-  {id:'speed',title:'Page Load Speed',weight:15,
-   tag:'Why does speed matter for AI?',
-   edu:'Page speed measures how fast your site loads — scored 0 to 100 by Google. Under 50 is poor, 50–89 needs work, 90+ is excellent. AI bots have time limits when crawling.',
-   impactFail:'Slow sites get partially crawled or skipped entirely. If an AI bot times out before reading your page, your business does not exist to that AI.',
-   impactPass:'Your site loads fast. AI bots can fully read your content and are far more likely to reference your business when recommending local services.'},
-  {id:'mobile',title:'Mobile Friendly',weight:10,
-   tag:'Why does mobile matter for AI?',
-   edu:'Mobile friendliness means your site works correctly on phones. Google and most AI crawlers use mobile-first indexing — meaning they visit your mobile version first.',
-   impactFail:'AI crawlers see a broken or limited version of your site. This reduces how much content they can index, cutting your chances of appearing in AI recommendations.',
-   impactPass:'AI crawlers index your full content using the mobile version. Being mobile friendly directly boosts your AI visibility and citation rate.'},
   {id:'schema',title:'Structured Data (Schema)',weight:20,
    tag:'What is structured data?',
    edu:'Schema markup is hidden code that tells AI exactly what your business is — your name, address, phone, services, hours, and reviews. Think of it as a business card written in a language AI reads perfectly.',
@@ -238,21 +227,31 @@ const defs=[
    edu:'llms.txt is a new standard file (like robots.txt but for AI) that guides AI language models on how to understand your website — what your business does, your key pages, and how to reference you. Very few local businesses have this set up correctly.',
    impactFail:'No llms.txt means AI has no guide for understanding your site. This is one of the most impactful fixes for AI visibility and requires specialist setup.',
    impactPass:'You have an llms.txt file. This gives AI models a direct guide to your business, improving how accurately they describe and recommend you.'},
-  {id:'content',title:'Content Structure',weight:15,
+  {id:'metadesc',title:'Meta Description',weight:15,
+   tag:'What is a meta description?',
+   edu:'A meta description is a short summary of your page that appears in search results and is read by AI crawlers. It tells AI exactly what your business does in plain language.',
+   impactFail:'No meta description means AI has to guess what your business does from your page content alone — leading to inaccurate or missing recommendations.',
+   impactPass:'Your meta description gives AI a clear, concise summary of your business — improving how accurately it describes and recommends you.'},
+  {id:'title',title:'Business Name & Page Title',weight:15,
+   tag:'Why does your page title matter?',
+   edu:'Your page title is the first thing AI reads when visiting your site. It should clearly state your business name and what you do. Generic titles like "Home" or "Welcome" confuse AI crawlers.',
+   impactFail:'Your page title is weak or generic. AI cannot confidently identify your business name or what you do — making it hard to recommend you accurately.',
+   impactPass:'Your page title clearly identifies your business. AI can immediately understand who you are and what you do.'},
+  {id:'content',title:'Content Structure',weight:10,
    tag:'Why does content structure matter?',
    edu:'Structure refers to how your page is organised — clear H1/H2 headings, a descriptive page title, a meta description, and obvious info about your services and location. AI reads structure, not just words.',
-   impactFail:'Poor structure means AI cannot confidently understand your services or location. It may describe your business vaguely, incorrectly, or not recommend you at all.',
-   impactPass:'Good structure means AI can clearly identify what you do, where you are, and who to recommend you to — boosting your citation rate significantly.'},
+   impactFail:'Poor structure means AI cannot confidently understand your services or location. It may describe your business vaguely or not recommend you at all.',
+   impactPass:'Good structure means AI can clearly identify what you do, where you are, and who to recommend you to.'},
 ];
 
 const msgs={
-  https:  {pass:'Secure — AI crawlers fully trust your site.',fail:'Not HTTPS — AI crawlers flag this site as untrustworthy.',warn:'HTTPS unclear.'},
-  speed:  {pass:'Fast — AI bots can read your full content.',fail:'Too slow — AI crawlers may time out and skip your site.',warn:'Analysing speed in background...'},
-  mobile: {pass:'Mobile friendly — AI indexes your full content.',fail:'Not mobile friendly — AI sees a degraded version of your site.',warn:'Analysing mobile in background...'},
-  schema: {pass:'Schema found — AI knows exactly who you are.',fail:'No schema — AI cannot reliably identify your business.',warn:'Limited schema — AI is guessing about your business.'},
-  robots: {pass:'All AI crawlers allowed — they can read your site.',fail:'AI crawlers blocked — ChatGPT or Claude cannot read you.',warn:'Crawler access unclear — needs investigation.'},
-  llms:   {pass:'llms.txt found — AI has a guide to your content.',fail:'No llms.txt — AI has no guide to understand your site.',warn:'llms.txt unclear.'},
-  content:{pass:'Good structure — AI understands your business.',fail:'Poor structure — AI cannot identify your services.',warn:'Structure needs improvement.'},
+  https:    {pass:'Secure — AI crawlers fully trust your site.',fail:'Not HTTPS — AI crawlers flag this site as untrustworthy.',warn:'HTTPS unclear.'},
+  schema:   {pass:'Schema found — AI knows exactly who you are.',fail:'No schema — AI cannot reliably identify your business.',warn:'Limited schema — AI is guessing about your business.'},
+  robots:   {pass:'All AI crawlers allowed — they can read your site.',fail:'AI crawlers blocked — ChatGPT or Claude cannot read you.',warn:'Crawler access unclear — needs investigation.'},
+  llms:     {pass:'llms.txt found — AI has a guide to your content.',fail:'No llms.txt — AI has no guide to understand your site.',warn:'llms.txt unclear.'},
+  metadesc: {pass:'Meta description found — AI has a clear summary of your business.',fail:'No meta description — AI has to guess what your business does.',warn:'Meta description too short or missing.'},
+  title:    {pass:'Strong page title — AI can clearly identify your business.',fail:'Weak or generic title — AI cannot identify your business name.',warn:'Page title could be more descriptive.'},
+  content:  {pass:'Good structure — AI understands your business.',fail:'Poor structure — AI cannot identify your services.',warn:'Structure needs improvement.'},
 };
 
 let scores={},openCheck=null;
@@ -380,43 +379,23 @@ async function runCheck(){
 
   const base=parsed.origin;
 
-  // Worker runs first — fast results in 2-3 seconds
   try {
     const wResp=await fetch(`${WORKER}?url=${encodeURIComponent(base)}`);
     const wData=await wResp.json();
     if(wData&&wData.results){
       const r=wData.results;
-      for(const[i,id] of ['https','schema','robots','llms','content'].entries()){
+      for(const[i,id] of ['https','schema','robots','llms','metadesc','title','content'].entries()){
         await sleep(i*100);
         setCheck(id,r[id]?.status||'warn',r[id]?.score??0);
       }
     }
   } catch(e){
     setCheck('https',parsed.protocol==='https:'?'pass':'fail',parsed.protocol==='https:'?10:0);
-    ['schema','robots','llms','content'].forEach(id=>setCheck(id,'warn',0));
+    ['schema','robots','llms','metadesc','title','content'].forEach(id=>setCheck(id,'warn',0));
   }
 
-  // Re-enable button immediately after Worker results
   btn.disabled=false;btn.textContent='Check again →';
   if(tally()<80)cta.style.display='block';
-
-  // PSI runs in background — speed and mobile update quietly
-  fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(base)}&strategy=mobile&key=${PSI}&category=performance&category=seo&category=best-practices`)
-    .then(r=>r.json())
-    .then(pData=>{
-      const lhr=pData?.lighthouseResult;
-      const audits=lhr?.audits||{};
-      const cats=lhr?.categories||{};
-      const perf=cats.performance?Math.round(cats.performance.score*100):null;
-      setCheck('speed',perf===null?'warn':perf>=70?'pass':perf>=40?'warn':'fail',perf===null?7:perf>=70?15:perf>=40?8:2);
-      const vp=audits['viewport'];
-      setCheck('mobile',vp?.score===1?'pass':vp?.score===0?'fail':'warn',vp?.score===1?10:vp?.score===0?0:5);
-      if(tally()<80)cta.style.display='block';
-    })
-    .catch(()=>{
-      setCheck('speed','warn',7);
-      setCheck('mobile','warn',5);
-    });
 }
 
 document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')runCheck()});
