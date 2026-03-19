@@ -379,10 +379,9 @@ async function runCheck(){
   });
 
   const base=parsed.origin;
-  const controller=new AbortController();
-setTimeout(()=>controller.abort(),8000);
 const [wData,pData]=await Promise.all([
-    fetch(`${WORKER}?url=${encodeURIComponent(base)}`,{signal:controller.signal}).then(r=>r.json()).catch(()=>null),
+    fetch(`${WORKER}?url=${encodeURIComponent(base)}`,{signal:AbortSignal.timeout(8000)}).then(r=>r.json()).catch(()=>null),
+```
     fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(base)}&strategy=mobile&key=${PSI}&category=performance&category=seo&category=best-practices`).then(r=>r.json()).catch(()=>null),
   ]);
     fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(base)}&strategy=mobile&key=${PSI}&category=performance&category=seo&category=best-practices`).then(r=>r.json()).catch(()=>null),
